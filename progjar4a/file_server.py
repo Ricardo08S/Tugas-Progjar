@@ -17,13 +17,20 @@ class ProcessTheClient(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
+        data_received = ""
         while True:
-            data = self.connection.recv(32)
+            data = self.connection.recv(4096)
             if data:
-                d = data.decode()
-                hasil = fp.proses_string(d)
-                hasil=hasil+"\r\n\r\n"
-                self.connection.sendall(hasil.encode())
+                data_received += data.decode()
+                if "\r\n\r\n" in data_received:
+                    command_str = data_received.split("\r\n\r\n", 1)[0]
+                    
+                    # Memproses perintah
+                    hasil = fp.proses_string(command_str)
+                    hasil=hasil+"\r\n\r\n"
+                    self.connection.sendall(hasil.encode())
+                    
+                    data_received = data_received.split("\r\n\r\n", 1)[1] if len(data_received.split("\r\n\r\n", 1)) > 1 else ""
             else:
                 break
         self.connection.close()
@@ -51,10 +58,9 @@ class Server(threading.Thread):
 
 
 def main():
-    svr = Server(ipaddress='0.0.0.0',port=6666)
+    svr = Server(ipaddress='0.0.0.0',port=6667)
     svr.start()
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,6 +1,6 @@
 import json
 import logging
-import shlex
+# import shlex
 
 from file_interface import FileInterface
 
@@ -23,19 +23,30 @@ class FileProtocol:
         self.file = FileInterface()
     def proses_string(self,string_datamasuk=''):
         logging.warning(f"string diproses: {string_datamasuk}")
-        c = shlex.split(string_datamasuk.lower())
+        
+        parts = string_datamasuk.split(' ', 2) 
+        
         try:
-            c_request = c[0].strip()
-            logging.warning(f"memproses request: {c_request}")
-            params = [x for x in c[1:]]
+            c_request = parts[0].strip().lower()
+            
+            params = []
+            if len(parts) > 1:
+                params.append(parts[1])
+            if len(parts) > 2:
+                params.append(parts[2])
+            
+            logging.warning(f"memproses request: {c_request} dengan params: {params}")
             cl = getattr(self.file,c_request)(params)
             return json.dumps(cl)
-        except Exception:
-            return json.dumps(dict(status='ERROR',data='request tidak dikenali'))
+        except AttributeError:
+            return json.dumps(dict(status='ERROR', data='request tidak dikenali'))
+        except IndexError:
+            return json.dumps(dict(status='ERROR', data='Parameter tidak lengkap untuk request ini'))
+        except Exception as e:
+            return json.dumps(dict(status='ERROR',data=f'Kesalahan pemrosesan: {str(e)}'))
 
 
 if __name__=='__main__':
-    #contoh pemakaian
     fp = FileProtocol()
     print(fp.proses_string("LIST"))
     print(fp.proses_string("GET pokijan.jpg"))
